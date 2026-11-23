@@ -2,7 +2,7 @@
 """Server-side iCloud sender (runs in GitHub Actions). Never prints recipient addresses.
 Env: ICLOUD_USER, ICLOUD_PASS, FROM_NAME. Files: queue.csv (email,subject,body), sent.log (appended).
 Waits until 13:30 UTC (= 18:30 PKT) unless --now. Skips Sunday. Cap 40/day. Gap 3.0-3.2 min."""
-import csv, datetime as dt, os, random, smtplib, ssl, sys, time
+import csv, datetime as dt, imaplib, os, random, smtplib, ssl, sys, time
 from email.message import EmailMessage
 from email.utils import formataddr, make_msgid
 now_flag = "--now" in sys.argv
@@ -26,10 +26,19 @@ ctx = ssl.create_default_context()
 def conn():
     s = smtplib.SMTP("smtp.mail.me.com", 587, timeout=60); s.starttls(context=ctx); s.login(user, pw); return s
 s = conn()
+imap = None
+def save_sent(msg):
+    global imap
+    try:
+        if imap is None:
+            imap = imaplib.IMAP4_SSL("imap.mail.me.com", 993); imap.login(user, pw)
+        imap.append("Sent Messages", "\\Seen", imaplib.Time2Internaldate(time.time()), msg.as_bytes())
+    except Exception:
+        imap = None
 for i, r in enumerate(todo, 1):
     m = EmailMessage(); m["From"] = formataddr((name, user)); m["To"] = r["email"].strip()
     m["Subject"] = r["subject"]; m["Message-ID"] = make_msgid(domain="icloud.com"); m.set_content(r["body"])
-    try: s.send_message(m); status = "SENT"
+    try: s.send_message(m); status = "SENT"; save_sent(m)
     except Exception as e:
         status = "ERR"
         try: s.quit()
