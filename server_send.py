@@ -8,6 +8,14 @@ from email.utils import formataddr, make_msgid
 now_flag = "--now" in sys.argv
 cap = int(os.environ.get("CAP", "40"))
 user, pw, name = os.environ["ICLOUD_USER"], os.environ["ICLOUD_PASS"].replace(" ", ""), os.environ.get("FROM_NAME", "")
+if os.environ.get("DIAG") == "1":
+    ctx0 = ssl.create_default_context(); d = smtplib.SMTP("smtp.mail.me.com", 587, timeout=60); d.starttls(context=ctx0); d.login(user, pw)
+    for k in (1, 2, 3):
+        mm = EmailMessage(); mm["From"] = formataddr((name, user)); mm["To"] = user; mm["Subject"] = f"runner diag {k}"; mm["Message-ID"] = make_msgid(domain="icloud.com"); mm.set_content("diag")
+        try: d.send_message(mm); print("DIAG", k, "OK", flush=True)
+        except Exception as e: print("DIAG", k, "ERR", type(e).__name__, str(e)[:300], flush=True)
+        time.sleep(5)
+    sys.exit(0)
 utc = dt.datetime.now(dt.timezone.utc)
 today = str(utc.date())
 if not now_flag and utc.weekday() == 6: sys.exit("Sunday, no send.")
@@ -22,14 +30,6 @@ if not todo: sys.exit(0)
 if not now_flag:
     t = utc.replace(hour=13, minute=30, second=0, microsecond=0)
     while dt.datetime.now(dt.timezone.utc) < t: time.sleep(20)
-if os.environ.get("DIAG") == "1":
-    ctx0 = ssl.create_default_context(); d = smtplib.SMTP("smtp.mail.me.com", 587, timeout=60); d.starttls(context=ctx0); d.login(user, pw)
-    for k in (1, 2, 3):
-        mm = EmailMessage(); mm["From"] = formataddr((name, user)); mm["To"] = user; mm["Subject"] = f"runner diag {k}"; mm["Message-ID"] = make_msgid(domain="icloud.com"); mm.set_content("diag")
-        try: d.send_message(mm); print("DIAG", k, "OK", flush=True)
-        except Exception as e: print("DIAG", k, "ERR", type(e).__name__, str(e)[:300], flush=True)
-        time.sleep(5)
-    sys.exit(0)
 ctx = ssl.create_default_context()
 def conn():
     s = smtplib.SMTP("smtp.mail.me.com", 587, timeout=60); s.starttls(context=ctx); s.login(user, pw); return s
