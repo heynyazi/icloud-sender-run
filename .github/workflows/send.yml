@@ -7,6 +7,9 @@ on:
       now:
         description: "send immediately (test)"
         default: "no"
+      diag:
+        description: "diagnostic self-test"
+        default: "no"
       cap:
         description: "max emails"
         default: "40"
@@ -30,6 +33,7 @@ jobs:
           ICLOUD_PASS: ${{ secrets.ICLOUD_PASS }}
           FROM_NAME: ${{ secrets.FROM_NAME }}
           CAP: ${{ github.event.inputs.cap || '40' }}
+          DIAG: ${{ github.event.inputs.diag == 'yes' && '1' || '0' }}
         run: |
           if [ "${{ github.event.inputs.now }}" = "yes" ]; then python3 server_send.py --now; else python3 server_send.py; fi
       - name: save log
@@ -39,4 +43,4 @@ jobs:
           [ -f sent.log ] && openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:QUEUE_KEY -in sent.log -out sent.log.enc || true
           rm -f queue.csv sent.log
           git config user.name bot; git config user.email bot@users.noreply.github.com
-          git add -A; git commit -m "log $(date -u +%F)" || true; git pull --rebase || true; git push || true
+          git add -A; git commit -m "log $(date -u +%F)" || true; for i in 1 2 3; do git pull --rebase -X theirs || true; git push && break || sleep 5; done
