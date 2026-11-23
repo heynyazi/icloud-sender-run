@@ -1,0 +1,42 @@
+name: icloud-send
+on:
+  schedule:
+    - cron: "20 13 * * 1-6"   # 13:20 UTC; script waits until 13:30 UTC = 18:30 PKT
+  workflow_dispatch:
+    inputs:
+      now:
+        description: "send immediately (test)"
+        default: "no"
+      cap:
+        description: "max emails"
+        default: "40"
+permissions:
+  contents: write
+concurrency: icloud-send
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 200
+    steps:
+      - uses: actions/checkout@v4
+      - name: decrypt
+        env: { QUEUE_KEY: "${{ secrets.QUEUE_KEY }}" }
+        run: |
+          openssl enc -d -aes-256-cbc -pbkdf2 -pass env:QUEUE_KEY -in queue.csv.enc -out queue.csv
+          [ -f sent.log.enc ] && openssl enc -d -aes-256-cbc -pbkdf2 -pass env:QUEUE_KEY -in sent.log.enc -out sent.log || true
+      - name: send
+        env:
+          ICLOUD_USER: ${{ secrets.ICLOUD_USER }}
+          ICLOUD_PASS: ${{ secrets.ICLOUD_PASS }}
+          FROM_NAME: ${{ secrets.FROM_NAME }}
+          CAP: ${{ github.event.inputs.cap || '40' }}
+        run: |
+          if [ "${{ github.event.inputs.now }}" = "yes" ]; then python3 server_send.py --now; else python3 server_send.py; fi
+      - name: save log
+        if: always()
+        env: { QUEUE_KEY: "${{ secrets.QUEUE_KEY }}" }
+        run: |
+          [ -f sent.log ] && openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:QUEUE_KEY -in sent.log -out sent.log.enc || true
+          rm -f queue.csv sent.log
+          git config user.name bot; git config user.email bot@users.noreply.github.com
+          git add -A; git commit -m "log $(date -u +%F)" || true; git push || true
