@@ -31,32 +31,25 @@ if not now_flag:
     t = utc.replace(hour=13, minute=30, second=0, microsecond=0)
     while dt.datetime.now(dt.timezone.utc) < t: time.sleep(20)
 ctx = ssl.create_default_context()
-def conn():
-    s = smtplib.SMTP("smtp.mail.me.com", 587, timeout=60); s.starttls(context=ctx); s.login(user, pw); return s
-s = conn()
+def send_one(m):
+    # fresh connection per email: Apple drops idle sessions after ~3 min (421 timeout exceeded)
+    c = smtplib.SMTP("smtp.mail.me.com", 587, timeout=60); c.starttls(context=ctx); c.login(user, pw)
+    try: c.send_message(m)
+    finally:
+        try: c.quit()
+        except Exception: pass
 errs = 0
-imap = None
-def save_sent(msg):
-    global imap
-    try:
-        if imap is None:
-            imap = imaplib.IMAP4_SSL("imap.mail.me.com", 993); imap.login(user, pw)
-        imap.append("Sent Messages", "\\Seen", imaplib.Time2Internaldate(time.time()), msg.as_bytes())
-    except Exception:
-        imap = None
 for i, r in enumerate(todo, 1):
     m = EmailMessage(); m["From"] = formataddr((name, user)); m["To"] = r["email"].strip()
     m["Subject"] = r["subject"]; m["Message-ID"] = make_msgid(domain="icloud.com"); m.set_content(r["body"])
-    try: s.send_message(m); status = "SENT"; save_sent(m); errs = 0
-    except Exception as e:
-        status = "ERR"; errs += 1
-        print("ERROR DETAIL:", type(e).__name__, str(e)[:240].replace(r["email"].strip(), "<rcpt>"), flush=True)
-        try: s.quit()
-        except Exception: pass
-        try: s = conn()
-        except Exception: print("reconnect failed"); break
+    status = "ERR"
+    for attempt in (1, 2):
+        try: send_one(m); status = "SENT"; break
+        except Exception as e:
+            print("ERROR DETAIL:", type(e).__name__, str(e)[:240].replace(r["email"].strip(), "<rcpt>"), flush=True); time.sleep(4)
+    errs = errs + 1 if status != "SENT" else 0
     with open("sent.log", "a") as f: f.write(f"{today}\t{r['email'].strip().lower()}\t{status}\t{dt.datetime.now(dt.timezone.utc):%H:%M:%S}\n")
     print(f"{i}/{len(todo)} {status}", flush=True)
-    if errs >= 3: print("ABORT: 3 errors in a row, stopping so nothing burns", flush=True); break
+    if errs >= 3: print("ABORT: 3 errors in a row, stopping", flush=True); break
     if i < len(todo): time.sleep(random.uniform(3.0, 3.2) * 60)
 print("done")
