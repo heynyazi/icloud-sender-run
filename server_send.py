@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Server-side iCloud sender (runs in GitHub Actions). Never prints recipient addresses.
 Env: ICLOUD_USER, ICLOUD_PASS, FROM_NAME. Files: queue.csv (email,subject,body), sent.log (appended).
-Waits until 13:30 UTC (= 18:30 PKT) unless --now. Skips Sunday. Cap 40/day. Gap 2.5-2.8 min."""
+Waits until 13:30 UTC (= 18:30 PKT) unless --now. Skips Sunday. Cap 40/day. Gap 3.0-3.2 min."""
 import csv, datetime as dt, os, random, smtplib, ssl, sys, time
 from email.message import EmailMessage
 from email.utils import formataddr, make_msgid
@@ -38,5 +38,5 @@ for i, r in enumerate(todo, 1):
         except Exception: print("reconnect failed"); break
     with open("sent.log", "a") as f: f.write(f"{today}\t{r['email'].strip().lower()}\t{status}\t{dt.datetime.now(dt.timezone.utc):%H:%M:%S}\n")
     print(f"{i}/{len(todo)} {status}", flush=True)
-    if i < len(todo): time.sleep(random.uniform(2.5, 2.8) * 60)
+    if i < len(todo): time.sleep(random.uniform(3.0, 3.2) * 60)
 print("done")
