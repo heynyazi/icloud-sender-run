@@ -32,7 +32,7 @@ jobs:
           ICLOUD_USER: ${{ secrets.ICLOUD_USER }}
           ICLOUD_PASS: ${{ secrets.ICLOUD_PASS }}
           FROM_NAME: ${{ secrets.FROM_NAME }}
-          CAP: ${{ github.event.inputs.cap || '40' }}
+          CAP: ${{ github.event.inputs.cap || '48' }}
           DIAG: ${{ github.event.inputs.diag == 'yes' && '1' || '0' }}
         run: |
           if [ "${{ github.event.inputs.now }}" = "yes" ]; then python3 server_send.py --now; else python3 server_send.py; fi
