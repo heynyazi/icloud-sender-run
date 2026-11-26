@@ -51,5 +51,5 @@ for i, r in enumerate(todo, 1):
     with open("sent.log", "a") as f: f.write(f"{today}\t{r['email'].strip().lower()}\t{status}\t{dt.datetime.now(dt.timezone.utc):%H:%M:%S}\n")
     print(f"{i}/{len(todo)} {status}", flush=True)
     if errs >= 3: print("ABORT: 3 errors in a row, stopping", flush=True); break
-    if i < len(todo): time.sleep(random.uniform(3.0, 3.2) * 60)
+    if i < len(todo): g = float(os.environ.get("GAP_MIN", "3.0")); time.sleep(random.uniform(g, g + 0.1) * 60)
 print("done")
