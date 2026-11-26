@@ -1,11 +1,11 @@
 name: icloud-send
 on:
   schedule:
-    # Fri Nov 27 2026 Poland 40: send from 06:30 UTC = 11:30 PKT. 3 start times in case GitHub's timer is late;
+    # Sat Nov 28 2026 Poland 40: send from 06:30 UTC = 11:30 PKT. 3 start times in case GitHub's timer is late;
     # later runs queue behind the first and send nothing (already-sent emails are skipped).
-    - cron: "0 3 27 11 *"
-    - cron: "15 4 27 11 *"
-    - cron: "30 5 27 11 *"
+    - cron: "0 3 28 11 *"
+    - cron: "15 4 28 11 *"
+    - cron: "30 5 28 11 *"
   workflow_dispatch:
     inputs:
       now:
