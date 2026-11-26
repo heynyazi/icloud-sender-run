@@ -28,7 +28,7 @@ todo = rows[: max(0, cap - sent_today)]
 print(f"{len(rows)} unsent, {sent_today} sent today, sending {len(todo)}", flush=True)
 if not todo: sys.exit(0)
 if not now_flag:
-    t = utc.replace(hour=13, minute=30, second=0, microsecond=0)
+    hh, mm = map(int, os.environ.get("SEND_AT", "13:30").split(":")); t = utc.replace(hour=hh, minute=mm, second=0, microsecond=0)
     while dt.datetime.now(dt.timezone.utc) < t: time.sleep(20)
 ctx = ssl.create_default_context()
 def send_one(m):

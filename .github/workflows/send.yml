@@ -1,7 +1,11 @@
 name: icloud-send
 on:
   schedule:
-    - cron: "20 13 * * 1-6"   # 13:20 UTC; script waits until 13:30 UTC = 18:30 PKT
+    # Fri Nov 27 2026 Poland 40: send from 06:30 UTC = 11:30 PKT. 3 start times in case GitHub's timer is late;
+    # later runs queue behind the first and send nothing (already-sent emails are skipped).
+    - cron: "0 3 27 11 *"
+    - cron: "15 4 27 11 *"
+    - cron: "30 5 27 11 *"
   workflow_dispatch:
     inputs:
       now:
@@ -19,7 +23,7 @@ concurrency: icloud-send
 jobs:
   send:
     runs-on: ubuntu-latest
-    timeout-minutes: 200
+    timeout-minutes: 355
     steps:
       - uses: actions/checkout@v4
       - name: decrypt
@@ -32,7 +36,8 @@ jobs:
           ICLOUD_USER: ${{ secrets.ICLOUD_USER }}
           ICLOUD_PASS: ${{ secrets.ICLOUD_PASS }}
           FROM_NAME: ${{ secrets.FROM_NAME }}
-          CAP: ${{ github.event.inputs.cap || '48' }}
+          CAP: ${{ github.event.inputs.cap || '40' }}
+          SEND_AT: "06:30"
           DIAG: ${{ github.event.inputs.diag == 'yes' && '1' || '0' }}
         run: |
           if [ "${{ github.event.inputs.now }}" = "yes" ]; then python3 server_send.py --now; else python3 server_send.py; fi
