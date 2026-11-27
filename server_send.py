@@ -7,6 +7,8 @@ from email.message import EmailMessage
 from email.utils import formataddr, make_msgid
 now_flag = "--now" in sys.argv
 cap = int(os.environ.get("CAP", "40"))
+for kv in os.environ.get("CAP_BY_DATE", "").split(","):
+    if "=" in kv and kv.split("=")[0].strip() == str(dt.datetime.now(dt.timezone.utc).date()): cap = int(kv.split("=")[1])
 user, pw, name = os.environ["ICLOUD_USER"], os.environ["ICLOUD_PASS"].replace(" ", ""), os.environ.get("FROM_NAME", "")
 if os.environ.get("DIAG") == "1":
     ctx0 = ssl.create_default_context(); d = smtplib.SMTP("smtp.mail.me.com", 587, timeout=60); d.starttls(context=ctx0); d.login(user, pw)

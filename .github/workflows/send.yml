@@ -3,7 +3,10 @@ on:
   schedule:
     # Sat Nov 28 2026 Poland 45, 4-min gap (~3h): send from 06:30 UTC = 11:30 PKT. 3 start times in case GitHub's timer is late;
     # later runs queue behind the first and send nothing (already-sent emails are skipped).
-    - cron: "0 4 28 11 *"
+    - cron: "0 3 27 11 *"   # Fri Nov 27 Poland 40
+    - cron: "0 4 27 11 *"
+    - cron: "0 5 27 11 *"
+    - cron: "0 4 28 11 *"   # Sat Nov 28 Poland 45
     - cron: "0 5 28 11 *"
     - cron: "0 6 28 11 *"
   workflow_dispatch:
@@ -39,6 +42,7 @@ jobs:
           CAP: ${{ github.event.inputs.cap || '45' }}
           SEND_AT: "06:30"
           GAP_MIN: "4.0"
+          CAP_BY_DATE: "2026-11-27=40,2026-11-28=45"
           DIAG: ${{ github.event.inputs.diag == 'yes' && '1' || '0' }}
         run: |
           if [ "${{ github.event.inputs.now }}" = "yes" ]; then python3 server_send.py --now; else python3 server_send.py; fi
